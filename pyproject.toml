@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rsi-transfer-curriculum"
+version = "0.1.0"
+description = "CPU reference components for transfer-credit curriculum research"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+rsi-smoke = "rsi_curriculum.smoke:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

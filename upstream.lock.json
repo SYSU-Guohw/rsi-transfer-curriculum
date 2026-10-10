@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "reviewed_on": "2026-10-10",
+  "runtime_validation": "Pinned API-Bank agenda subset executed on CPU; 32 tests and scripted smoke passed on Python 3.9.6. GPU frameworks have not been installed or run.",
+  "repositories": {
+    "api_bank": {
+      "url": "https://github.com/AlibabaResearch/DAMO-ConvAI",
+      "commit": "188835d4f9948563a6b9c8ac50cd0f3ae4021ed6",
+      "license": "MIT",
+      "path": "api-bank",
+      "selected_files_sha256": {
+        "LICENSE": "16f9444e99d9f667b3e376186831d54250039a1d67e820f0955fa651f092454d",
+        "api-bank/apis/api.py": "7e06f974c433e207bc012db4b46aac5de0baff1e959fa0004274b2036e5b58fd",
+        "api-bank/apis/check_token.py": "31acf7aba7b01e4993d4eb4de55df074baebba5fc87592dab6635d914a4611c7",
+        "api-bank/apis/add_agenda.py": "8c930c082b4c411f2f6951cb69217d10ebffa27c0a375261c687366937255dc1",
+        "api-bank/apis/query_agenda.py": "1d4a163ba1c1aa406b7dbaf6f5464b32c5b863c08720de67f51c13a9c953e5f2",
+        "api-bank/apis/delete_agenda.py": "87e643ea0185c0ea3a44fe3609ac2660f737c943810101137aa575d3eeffc461"
+      }
+    },
+    "trl": {
+      "url": "https://github.com/huggingface/trl",
+      "commit": "72cf37df714d3183e8e96ec391d474b26eaa30b6",
+      "version_at_commit": "1.16.0.dev0",
+      "license": "Apache-2.0",
+      "role": "planned learner trainer; experimental rollout_func contract inspected"
+    },
+    "verl": {
+      "url": "https://github.com/verl-project/verl",
+      "commit": "9058412fb308e9f2e31a794ad1d18d97d4286485",
+      "license": "Apache-2.0",
+      "role": "later distributed backend; not a runtime dependency of the CPU prototype"
+    },
+    "genenv": {
+      "url": "https://github.com/Gen-Verse/GenEnv",
+      "commit": "30ac87276e0a13d3a84a8541365aff55bad667ad",
+      "license": "Apache-2.0",
+      "role": "baseline reference requiring paper/code reconciliation"
+    }
+  }
+}

@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "python": "3.9.6",
+  "upstream_identity": "188835d4f9948563a6b9c8ac50cd0f3ae4021ed6:bb75b2f7c8d849d3aed031fcfebf1f0275f956cb33dc950e696b074c177c82cc",
+  "execution": {
+    "fixture_source": "hand-authored; no official benchmark examples",
+    "token_cost_source": "synthetic counts for accounting regression only",
+    "all_observations_private_histories_states_and_allowances_match": true,
+    "all_original_per_call_checks_pass": true,
+    "independent_physical_tool_calls": 9,
+    "cached_physical_tool_calls": 4,
+    "logical_tool_calls_per_arm": 9,
+    "cache_hits": 5,
+    "cache_misses": 4,
+    "steps": [
+      {
+        "tool": "AddAgenda",
+        "cache_hits": [
+          false,
+          true,
+          true
+        ],
+        "tokens_left": [
+          26,
+          24,
+          26
+        ],
+        "actions_left": [
+          4,
+          4,
+          4
+        ]
+      },
+      {
+        "tool": "QueryAgenda",
+        "cache_hits": [
+          false,
+          false,
+          true
+        ],
+        "tokens_left": [
+          22,
+          22,
+          22
+        ],
+        "actions_left": [
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "tool": "DeleteAgenda",
+        "cache_hits": [
+          false,
+          true,
+          true
+        ],
+        "tokens_left": [
+          18,
+          18,
+          18
+        ],
+        "actions_left": [
+          2,
+          2,
+          2
+        ]
+      }
+    ],
+    "final_branches": [
+      {
+        "id": "candidate-0",
+        "tokens_left": 18,
+        "actions_left": 2,
+        "call_results": [
+          true,
+          true,
+          true
+        ],
+        "private_history_sha256": "7986baa85eaadb0345f04d5b3036f98d74dd7ee041a7da8a7b643010d30cfca0",
+        "environment_sha256": "b84259ee9bd0b8f8f716610ffb5b11d27770cf1ef6a79b9ac07583add70da6e8"
+      },
+      {
+        "id": "candidate-1",
+        "tokens_left": 18,
+        "actions_left": 2,
+        "call_results": [
+          true,
+          true,
+          true
+        ],
+        "private_history_sha256": "ceaa3dc6198ec0e86ed30eb09be3961f98d9e92b1c83918b44aec7ecdac29a9b",
+        "environment_sha256": "b84259ee9bd0b8f8f716610ffb5b11d27770cf1ef6a79b9ac07583add70da6e8"
+      },
+      {
+        "id": "candidate-2",
+        "tokens_left": 18,
+        "actions_left": 2,
+        "call_results": [
+          true,
+          true,
+          true
+        ],
+        "private_history_sha256": "fa984908f78a7cffb93c08e7994d7839a76d52e0289480f70250f0fa903f7ec2",
+        "environment_sha256": "b84259ee9bd0b8f8f716610ffb5b11d27770cf1ef6a79b9ac07583add70da6e8"
+      }
+    ]
+  },
+  "sampling": {
+    "kind": "fixed categorical distributions; not a learned-model experiment",
+    "draws": 20000,
+    "target_p": [
+      0.05,
+      0.25,
+      0.7
+    ],
+    "proposal_q": [
+      0.6,
+      0.3,
+      0.1
+    ],
+    "algebraic_output_mass": [
+      0.05,
+      0.25,
+      0.6999999999999998
+    ],
+    "empirical_output_frequency": [
+      0.04945,
+      0.24635,
+      0.7042
+    ],
+    "accepted_proposals": 7939
+  },
+  "credit": {
+    "kind": "synthetic supplied scores; no agent or generator training",
+    "committed_branch": "candidate-b",
+    "probe_ids": [
+      "probe-0",
+      "probe-1",
+      "probe-2",
+      "probe-3"
+    ],
+    "credits": {
+      "candidate-a": 0.25,
+      "candidate-b": -0.25
+    },
+    "weights": {
+      "candidate-a": 0.7310585786300049,
+      "candidate-b": 0.2689414213699951
+    }
+  },
+  "limitations": [
+    "CPU component checks only; no Qwen3, TRL, GRPO or generator update.",
+    "Per-call fixture checks are not an official free-running task success metric.",
+    "Categorical checks do not establish learned-model full-path equivalence.",
+    "Physical call counts do not establish wall-clock or end-to-end speedup."
+  ]
+}
