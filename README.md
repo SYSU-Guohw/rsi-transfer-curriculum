@@ -1,76 +1,139 @@
 # RSI Transfer Curriculum
 
-基于“试学后的迁移收益训练课程生成器”研究提案的首个 CPU 原型。
+用“试学后的迁移收益”训练课程生成器的可运行研究实现。项目包含：
 
-**代码选择：Transformers＋PEFT＋TRL 作为后续学习器后端，API-Bank 提供工具，研究外循环独立实现。** 多卡阶段再评估 verl。GenEnv 作为需要核对论文／代码差异的基线，当前不直接 fork。理由、源码位置和固定提交见[代码库调研](docs/CODEBASE_RESEARCH.zh.md)与[版本锁](upstream.lock.json)。
+- 固定版本的 API-Bank Agenda 工具与原始逐调用检查器。
+- 严格隔离的训练、开发、测试任务生成器。
+- 完整轨迹执行与终局评分。
+- Qwen3 + LoRA 的 SFT 冷启动和 TRL GRPO 分支试学。
+- 冻结分支、开发探针、配对迁移收益、预承诺分支推进。
+- 带 KL 正则和 Adam 状态的课程分布更新。
+- 逐轮 checkpoint、配置指纹和中断恢复。
+- Merlin/Arnold 队列提交脚本。
 
-当前实现不依赖 torch，未接入模型训练。Python 3.9+，运行与测试只用标准库。
+## 快速验证
 
-## 运行
-
-在本项目目录执行：
+CPU 环境只需要 Python 3.9+ 和标准库：
 
 ```bash
 export PYTHONPATH="$PWD/src"
 
-# 下载固定提交的 5 个 Python 源文件和 MIT LICENSE，并逐文件校验 SHA-256。
-# 不下载模型、数据集或训练框架。
 python3 -m rsi_curriculum.vendor bootstrap
-
 python3 -m unittest discover -s tests -v
 python3 -m rsi_curriculum.smoke --output outputs/cpu_smoke.json
+python3 -m rsi_curriculum.training \
+  --config configs/toy.json \
+  --output outputs/toy
 ```
 
-当前工作区已有上游 checkout，也可离线初始化：
+`toy` 后端会跑通与真实训练相同的外循环，并真实执行 API-Bank 工具，但学习器是明确标注的确定性表格模型。它只验证编排、评分、归因和恢复，不是模型训练结果。
+
+重复执行最后一条命令会读取 `state.json`，不会重复已提交的轮次。配置发生变化时会拒绝在原目录恢复。
+
+## 启动 Qwen3 训练
+
+真实后端要求 Python 3.11+、CUDA 和一张建议为 80GB 的 GPU：
 
 ```bash
-python3 -m rsi_curriculum.vendor bootstrap --checkout .cache/upstream/damo-convai
+python3 -m pip install -e '.[train]'
+export PYTHONPATH="$PWD/src"
+
+python3 -m rsi_curriculum.vendor bootstrap
+python3 -m rsi_curriculum.training \
+  --config configs/qwen3_8b_pilot.json \
+  --output /persistent/path/rsi-qwen3-pilot
 ```
 
-bootstrap 后，测试和 smoke 全程离线。可选以 `python3 -m pip install -e .` 在自己的虚拟环境中进行可编辑安装；当前复现实验使用上面的 `PYTHONPATH` 命令，无需安装包。
+默认 pilot 使用：
 
-## 已实现
+- `Qwen/Qwen3-8B` revision `b968826d9c46dd6066d109eabc6255188de91218`
+- LoRA rank 32，BF16
+- 2 个试学分支，5 个外循环
+- 每分支每轮 32 个训练任务、每提示 4 条 GRPO completion
+- 每轮 32 个开发探针，结束后 64 个独立测试任务
 
-| 模块 | 能力 |
-| --- | --- |
-| [vendor.py](src/rsi_curriculum/vendor.py) | 固定版本、哈希验证、保留许可证；只加载 API／CheckToken／三个 Agenda 工具，绕开上游全量动态导入 |
-| [state.py](src/rsi_curriculum/state.py) | 保留键类型和字典插入顺序的字节快照；显式拒绝未知对象、可变别名和循环 |
-| [environment.py](src/rsi_curriculum/environment.py) | 独立环境恢复；分支内工具共享 Agenda／Account 数据库；复制 QueryAgenda 返回的可变观测 |
-| [execution.py](src/rsi_curriculum/execution.py) | 独立执行与完整状态／调用缓存；哈希命中后比较原始字节；私有历史、token/action 额度和逐调用检查结果分别更新 |
-| [sampling.py](src/rsi_curriculum/sampling.py) | 全类别概率向量上的接受／拒绝、正残差采样与稳定 softmax；处理零概率及同分布情形 |
-| [credit.py](src/rsi_curriculum/credit.py) | 先均匀选择提交分支、后请求开发探针；严格对齐所有分支的探针，计算配对增益及指数归一化权重 |
-| [fixtures.py](src/rsi_curriculum/fixtures.py)、[smoke.py](src/rsi_curriculum/smoke.py) | 手写样例，执行原始工具并比较两种执行方式；类别采样检查与合成分数算术检查 |
+这些是接口和成本 pilot 参数，不是论文主实验配置。模型与 tokenizer revision、TRL commit 和 API-Bank 源文件哈希记录在 [`upstream.lock.json`](upstream.lock.json)。
 
-2026-10-10 在当前 Mac／Python 3.9.6 验证：**32 项测试通过**。保留的[CPU smoke 报告](docs/CPU_SMOKE_REPORT.json)记录：
+## 训练协议
 
-- 三个分支完成 Add → Query → Delete，9 个逻辑调用的逐步观测、私有历史、状态和额度与独立执行一致；原始逐调用检查全部通过。
-- 缓存共命中 5 次，实际调用由 9 次变成 4 次。这是手写高重合样例中的调用次数，不是耗时或训练加速测量。
-- 分支 token 额度曾为 `[26, 24, 26]`，因此中间分支不能复用下一步；后续额度恢复一致才再次命中。不同历史始终保留。
-- 测试覆盖强制哈希碰撞、隐藏 Account 状态、混合键／顺序、跨分支写隔离、失败工具、无效与截断动作、源文件篡改，以及 225 对小离散分布的概率质量核对。
-
-## 当前执行协议
-
-这是本原型的明确约定，**不是 API-Bank 官方自由运行轨迹评分协议**：
+每个任务要求模型一次生成由多个 JSON 对象组成的动作计划，最后提交：
 
 ```json
-{"tool":"AddAgenda","arguments":{"token":"synthetic-demo-token","content":"write meeting notes","time":"2025-01-02 09:00:00","location":"Room A"}}
+{"tool":"AddAgenda","arguments":{"content":"...","location":"...","time":"...","token":"..."}}
+{"final":"Task completed."}
 ```
 
-最终回复使用 `{"final":"..."}`。解析只归一化 JSON 空白和参数排列，不改参数内容；重复键、未知工具、多余参数或类型错误均判为无效动作。
+评分器逐个解析并执行动作。奖励由三部分组成：
 
-调用者提供该分支实际生成的 token 数；smoke 使用人为指定的测试计数。完整动作（含无效动作和 final）扣一次 action 及自身 token；token 用尽前未完成的动作只扣 token、不执行工具。恰好在 token 上限内完成的调用先执行再终止。终止分支不能重启或加入复用。
+- 70%：与原 API-Bank 检查器对齐的调用正确率
+- 20%：完整数据库终态一致
+- 10%：存在且位于最后的 `final`
 
-缓存键包含适配器／上游版本、任务 ID、Account／Agenda 全部状态、额度、参考调用、检查器游标与结果、终止状态和规范调用。缓存值只有环境效果和观测，不包含代表分支的记账。工具不读取私有文本历史，因此历史不进入工具缓存键；它始终保留在各分支中。若扩展为读取历史的工具、解释器、时钟、RNG 或检查器，必须扩展状态契约再启用复用。
+严格成功还要求无缺失、错序、多余或无效动作。课程训练与分支更新使用 shaped reward；可通过 `credit_metric` 选择迁移收益使用 `reward` 或严格 `success`。
 
-参考检查仅按 fixture 顺序调用原始 `check_api_call_correctness`，不汇总成任务成功率，不评价自然语言答案。没有使用官方测试样本作训练或 smoke 输入。
+每轮流程：
 
-采样模块处理调用者提供的完整分布，使用 Python 浮点数。它不能判定上游是否删掉了词表概率，也尚未实现私有模型前缀打分、token 块验证或 KV 回滚。`CreditRound` 的冻结分支 ID 是记录标签，不替代模型／优化器快照，也未执行生成器梯度更新。
+1. 课程生成器为每个候选分支采样一批任务。
+2. 所有分支从同一个 LoRA、优化器和调度状态开始 GRPO 更新。
+3. 分支冻结后，先均匀预承诺下一轮主分支，再抽取开发探针。
+4. 未更新模型与所有候选在同一探针上评分，计算配对迁移收益。
+5. 用收益更新课程族概率；主学习器推进到预承诺分支，而不是事后选择最高分分支。
 
-## 接下来接入训练的顺序
+训练、开发和测试实体使用不同命名空间与 token；测试集只在完整运行结束后评估。逐轮报告位于 `rounds/round-*/report.json`，最终结果位于 `final_report.json`。
 
-1. **先补数据与评分契约。** 定义生成任务 → 初始状态 → 原始调用参考的合法变换、训练／开发／最终测试划分，以及完整轨迹到逐调用评分的映射。尤其明确遗漏、多余调用、截断及自然语言答案的处理。
-2. **接 Transformers 概率参考实现。** 固定 Qwen3 revision／tokenizer 与温度，获取完整 logits；验证每个分支自己的前缀、拒绝后独立续写、真实 token 计数和 KV 回滚。先跑独立执行，再加 token 推测和缓存。
-3. **接 PEFT＋TRL 分支试学。** 实现共同模型／优化器／scheduler／随机数／回放快照，分别 GRPO 更新并冻结，再抽探针；按已预选分支提交全部训练状态。生成器使用 detached 权重及初始生成器 KL 更新。
-4. **做成本 pilot 与对照。** 同一后端比较独立执行、共同随机数、仅 token 推测、仅缓存及普通组合；计入全部训练分支、验证、残差解码、状态处理、工具和生成器成本，再决定是否迁移 verl。
+## Merlin 队列
 
-目前交付的是可运行的研究组件与验证基座。没有 Qwen3 训练结果、完整 RSI 闭环、官方任务成功率、新颖性结论或实测 GPU 资源估计。
+提交脚本不保存内部资源标识。先从 Merlin 查询可用资源，再设置：
+
+```bash
+export MERLIN_GROUP_ID='<resource-group-id>'
+export MERLIN_CLUSTER_ID='<cluster-id>'
+export MERLIN_QUEUE_NAME='<queue-name>'
+export MERLIN_IMAGE_URL='<cuda-pytorch-image>'
+
+# 推荐：挂载持久卷并把输出指向其实际容器路径
+export MERLIN_BYTENAS_NAME='<volume-name>'
+export RSI_OUTPUT_DIR='<persistent-mounted-path>/rsi-transfer-curriculum'
+
+# 先预览
+scripts/submit_merlin.sh --dry-run
+
+# 确认资源配置后真实提交
+scripts/submit_merlin.sh
+```
+
+脚本使用 `bytedcli merlin job create-run` 提交一张 GPU 的 Arnold 任务，在容器内克隆本公开仓库、固定 Git ref、安装训练依赖、运行测试，再启动 pilot。建议提交前设置完整 commit：
+
+```bash
+export RSI_GIT_REF="$(git rev-parse HEAD)"
+```
+
+全部变量和预览模式见：
+
+```bash
+scripts/submit_merlin.sh --help
+```
+
+## 模块
+
+| 模块 | 作用 |
+| --- | --- |
+| `tasks.py` | 六类 Agenda 任务、分区隔离、oracle 轨迹 |
+| `trajectory.py` | 自由 completion 解析、原工具执行、完整轨迹评分 |
+| `curriculum.py` | 课程采样、迁移收益策略梯度、KL 与 Adam 状态 |
+| `training.py` | 分支训练、探针归因、预承诺提交、恢复与最终测试 |
+| `hf_backend.py` | Qwen3、PEFT、TRL SFT/GRPO、LoRA/优化器 checkpoint |
+| `toy_backend.py` | 无 GPU 的完整外循环验证 |
+| `execution.py` | 分支隔离和碰撞校验的确定性工具转移缓存 |
+| `sampling.py` | 全词表接受/残差采样参考实现 |
+
+## 当前边界
+
+- 可直接启动的是 Agenda 确定性子集的 pilot，不是完整 API-Bank。
+- HF 后端已在代码层接入，但当前 Mac 没有 CUDA/训练依赖，因此尚未产生 Qwen3 训练结果。
+- 工具转移缓存已用于 GRPO 奖励和跨分支探针评分。
+- `sampling.py` 的精确 token 接受/残差算法有 CPU 测试，但跨 LoRA 模型的共享解码尚未接入 HF 生成路径；当前 TRL 各分支独立采样。
+- 课程生成器目前学习六类可执行任务的分布，不是另一个自由生成文本的 LLM。
+- 首次 GPU 运行应先做 2–5 GPU-days 的接口与成本验证，再决定是否扩展到多工具、更多分支和大规模实验。
+
+代码库选择与已核查接口见 [`docs/CODEBASE_RESEARCH.zh.md`](docs/CODEBASE_RESEARCH.zh.md)。

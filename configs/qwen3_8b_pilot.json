@@ -1,0 +1,33 @@
+{
+  "backend": "hf",
+  "seed": 20261010,
+  "rounds": 5,
+  "branches": 2,
+  "train_tasks_per_branch": 32,
+  "probes_per_round": 32,
+  "warmup_tasks": 128,
+  "test_tasks": 64,
+  "credit_metric": "reward",
+  "lambda_credit": 2.0,
+  "generator_learning_rate": 0.03,
+  "generator_kl": 0.02,
+  "output_dir": "outputs/qwen3-8b-pilot",
+  "hf": {
+    "model_name": "Qwen/Qwen3-8B",
+    "model_revision": "b968826d9c46dd6066d109eabc6255188de91218",
+    "dtype": "bfloat16",
+    "load_in_4bit": false,
+    "lora_rank": 32,
+    "lora_alpha": 64,
+    "lora_dropout": 0.05,
+    "learning_rate": 0.00001,
+    "warmup_steps": 40,
+    "branch_steps": 16,
+    "generations_per_prompt": 4,
+    "max_prompt_length": 1536,
+    "max_completion_length": 768,
+    "temperature": 0.8,
+    "beta": 0.01,
+    "gradient_accumulation_steps": 1
+  }
+}

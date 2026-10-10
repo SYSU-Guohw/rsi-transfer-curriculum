@@ -1,3 +1,3 @@
-"""Dependency-free CPU reference; learned-model training is not implemented."""
+"""Transfer-credit curriculum training for tool-using agents."""
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

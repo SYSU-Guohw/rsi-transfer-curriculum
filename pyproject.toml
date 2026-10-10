@@ -4,13 +4,26 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "rsi-transfer-curriculum"
-version = "0.1.0"
-description = "CPU reference components for transfer-credit curriculum research"
+version = "0.2.0"
+description = "Transfer-credit curriculum training for tool-using agents"
 requires-python = ">=3.9"
 dependencies = []
 
+[project.optional-dependencies]
+train = [
+  "accelerate>=1.4.0",
+  "bitsandbytes>=0.46.0",
+  "datasets>=4.7.0",
+  "peft>=0.13.0",
+  "safetensors>=0.5.0",
+  "torch>=2.6.0",
+  "transformers==5.19.0",
+  "trl @ git+https://github.com/huggingface/trl.git@72cf37df714d3183e8e96ec391d474b26eaa30b6",
+]
+
 [project.scripts]
 rsi-smoke = "rsi_curriculum.smoke:main"
+rsi-train = "rsi_curriculum.training:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

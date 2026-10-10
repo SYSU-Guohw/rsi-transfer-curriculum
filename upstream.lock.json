@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "reviewed_on": "2026-10-10",
-  "runtime_validation": "Pinned API-Bank agenda subset executed on CPU; 32 tests and scripted smoke passed on Python 3.9.6. GPU frameworks have not been installed or run.",
+  "runtime_validation": "Pinned API-Bank agenda subset and two-round toy training loop executed on CPU; 38 tests and scripted smoke passed on Python 3.9.6. GPU frameworks have not been installed or run.",
   "repositories": {
     "api_bank": {
       "url": "https://github.com/AlibabaResearch/DAMO-ConvAI",
@@ -16,6 +16,13 @@
         "api-bank/apis/query_agenda.py": "1d4a163ba1c1aa406b7dbaf6f5464b32c5b863c08720de67f51c13a9c953e5f2",
         "api-bank/apis/delete_agenda.py": "87e643ea0185c0ea3a44fe3609ac2660f737c943810101137aa575d3eeffc461"
       }
+    },
+    "qwen3_8b": {
+      "url": "https://huggingface.co/Qwen/Qwen3-8B",
+      "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+      "license": "Apache-2.0",
+      "config_sha256": "f7c4eadfbbf522470667b797a3c89be2524832d2d599797248dc304fff447c30",
+      "tokenizer_config_sha256": "d5d09f07b48c3086c508b30d1c9114bd1189145b74e982a265350c923acd8101"
     },
     "trl": {
       "url": "https://github.com/huggingface/trl",

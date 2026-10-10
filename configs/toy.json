@@ -1,0 +1,16 @@
+{
+  "backend": "toy",
+  "seed": 20261010,
+  "rounds": 2,
+  "branches": 2,
+  "train_tasks_per_branch": 8,
+  "probes_per_round": 12,
+  "warmup_tasks": 24,
+  "test_tasks": 24,
+  "credit_metric": "reward",
+  "lambda_credit": 2.0,
+  "generator_learning_rate": 0.05,
+  "generator_kl": 0.01,
+  "output_dir": "outputs/toy",
+  "hf": {}
+}
